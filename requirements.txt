@@ -1,0 +1,13 @@
+blinker==1.8.2
+click==8.1.7
+colorama==0.4.6
+EbookLib==0.18
+Flask==3.0.3
+itsdangerous==2.2.0
+Jinja2==3.1.4
+lxml==5.3.0
+MarkupSafe==3.0.2
+pillow==11.0.0
+six==1.16.0
+waitress==3.0.0
+Werkzeug==3.0.4

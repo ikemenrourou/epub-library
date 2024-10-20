@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>阅读 {{ filename }}</title>
+    <script src="{{ url_for('static', filename='js/jszip.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/epub.min.js') }}"></script>
+    <style>
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        background-image: url("../static/bg.png");
+        /* 背景图片 */
+        background-size: cover;
+        /* 背景图片覆盖整个容器 */
+        background-repeat: no-repeat;
+        /* 背景图片不重复 */
+        background-position: center;
+        /* 背景图片居中 */
+        overflow-x: hidden;
+        /* 禁用水平滚动 */
+      }
+
+      #viewer {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding: 20px;
+      }
+
+      #top-bar {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px;
+        background-color: #f0f0f0;
+      }
+
+      button,
+      select {
+        padding: 5px 10px;
+        margin-right: 10px;
+      }
+
+      #toc {
+            position: fixed;
+            left: -260px;
+            top: 50px;
+            bottom: 0;
+            width: 0px;
+            background-color: #ffffff;
+            overflow-y: auto;
+            transition: left 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            /* 柔和阴影 */
+            z-index: 10;
+            border-radius: 8px;
+            /* 圆角 */
+            border: 1px solid #e0e0e0;
+            /* 轻微边框 */
+      }
+
+      #toc.open {
+        left: 20px;
+        /* 保持一定的距离，增加空间感 */
+      }
+
+      #toc ul {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      #toc li {
+        padding: 15px;
+        /* 增加间距使其更舒适 */
+        border-bottom: 1px solid #f1f1f1;
+        cursor: pointer;
+        transition: background-color 0.3s ease, color 0.3s ease;
+        font-size: 16px;
+        /* 使字体稍微大一点，更清晰 */
+        color: #333333;
+      }
+
+      #toc li:hover {
+        background-color: #e9f5ff;
+        /* 使用柔和的蓝色背景以呼应Google风格 */
+        color: #007bff;
+        /* 近似Apple的系统蓝色 */
+        border-left: 4px solid #3395ff;
+        /* 增加悬停时的视觉反馈 */
+        padding-left: 11px;
+        /* 保持内容与边框一致 */
+      }
+
+      #top-bar {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 20px;
+        background-color: #00000044;
+        border-bottom: 1px solid #ffffff4d;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+
+      button,
+      select {
+        padding: 5px 10px;
+        margin-right: 1px;
+        background-color: #247bfd;
+        /* Apple风格的蓝色按钮 */
+        color: #ffffff;
+        border: none;
+        border-radius: 5px;
+        /* 圆角按钮 */
+        font-size: 14px;
+        transition: background-color 0.3s ease;
+      }
+
+      button:hover,
+      select:hover {
+        background-color: #005bb5;
+        /* 悬停时稍微加深颜色 */
+      }
+
+      #dictionary {
+        position: fixed;
+        right: -350px;
+        top: 150px;
+        bottom: 0;
+        width: 300px;
+        height: 600px;
+        background-color: #ffffff;
+        overflow-y: auto;
+        transition: right 0.3s ease;
+        box-shadow: -2px 0 12px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+        padding: 20px;
+      }
+
+      #dictionary.open {
+        right: 20px;
+        /* 保持一定的间距 */
+      }
+
+      #dictionary h3 {
+        font-size: 18px;
+        margin-bottom: 15px;
+        color: #333;
+      }
+
+      #dictionary-form input {
+        padding: 10px;
+        margin-bottom: 10px;
+        width: calc(100% - 20px);
+        border: 1px solid #e0e0e0;
+        border-radius: 5px;
+        font-size: 14px;
+      }
+
+      #dictionary-form button {
+        width: 100%;
+        padding: 10px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-size: 14px;
+      }
+
+      #dictionary-form button:hover {
+        background-color: #005bb5;
+      }
+
+      #current-location {
+        background-color: #007bff;
+        /* 主色调，类似Apple蓝 */
+        color: #ffffff;
+        padding: 8px 16px;
+        border-radius: 20px;
+        /* 圆角使其像标签（badge） */
+        font-size: 10px;
+        font-weight: 500;
+        /* 半粗体，增强可读性 */
+        display: inline-block;
+        margin-left: 20px;
+        /* 与其他元素保持适当间距 */
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        /* 添加轻微阴影以突出位置 */
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="top-bar">
+      <button id="toggle-toc">目录</button>
+      <button id="add-bookmark">添加书签</button>
+      <button id="toggle-dictionary">字典</button>
+      <select id="bookmarks"></select>
+      <select id="chapters"></select>
+      <span id="current-location"></span>
+    </div>
+    <div id="toc"></div>
+    <div id="viewer"></div>
+    <div id="dictionary">
+      <h3>字典</h3>
+      <ul id="dictionary-list"></ul>
+      <form id="dictionary-form">
+        <input type="text" id="original-text" placeholder="原文" required />
+        <input
+          type="text"
+          id="replacement-text"
+          placeholder="替换文本"
+          required
+        />
+        <button type="submit">添加条目</button>
+      </form>
+    </div>
+    <script>
+      var encodedFilename = encodeURIComponent("{{ filename }}");
+      var book = ePub("/books/" + encodedFilename);
+      var rendition = book.renderTo("viewer", {
+        width: "100%",
+        height: "100%",
+        flow: "scrolled-doc",
+        manager: "continuous",
+      });
+
+      var displayed = rendition.display();
+
+      // 变量定义
+      var dictionaryElement = document.getElementById("dictionary");
+      var toggleDictionaryButton = document.getElementById("toggle-dictionary");
+      var dictionaryList = document.getElementById("dictionary-list");
+      var dictionaryForm = document.getElementById("dictionary-form");
+      var originalTextInput = document.getElementById("original-text");
+      var replacementTextInput = document.getElementById("replacement-text");
+
+      // 切换字典面板的显示和隐藏
+      toggleDictionaryButton.addEventListener("click", function () {
+        dictionaryElement.classList.toggle("open");
+      });
+
+      // 获取字典条目并应用到页面
+      function loadDictionary() {
+        fetch(`/dictionary/${encodedFilename}`)
+          .then((response) => response.json())
+          .then((data) => {
+            dictionaryList.innerHTML = "";
+            data.forEach((item, index) => {
+              var li = document.createElement("li");
+              li.textContent = `${item.original} -> ${item.replacement}`;
+              dictionaryList.appendChild(li);
+            });
+
+            // 应用替换
+            rendition.hooks.content.register(function (contents, rendition) {
+              data.forEach((item) => {
+                if (item.enabled) {
+                  contents.document.body.innerHTML =
+                    contents.document.body.innerHTML.replace(
+                      new RegExp(item.original, "g"),
+                      item.replacement
+                    );
+                }
+              });
+            });
+          });
+      }
+
+      // 添加字典条目
+      dictionaryForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var original = originalTextInput.value.trim();
+        var replacement = replacementTextInput.value.trim();
+
+        if (original && replacement) {
+          // 获取当前字典，添加新条目，然后保存
+          fetch(`/dictionary/${encodedFilename}`)
+            .then((response) => response.json())
+            .then((data) => {
+              data.push({
+                original: original,
+                replacement: replacement,
+                enabled: true,
+              });
+              return fetch(`/dictionary/${encodedFilename}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+              });
+            })
+            .then(() => {
+              loadDictionary();
+              originalTextInput.value = "";
+              replacementTextInput.value = "";
+            });
+        }
+      });
+
+      // 初次加载字典
+      loadDictionary();
+
+      var currentLocation = document.getElementById("current-location");
+      var bookmarksSelect = document.getElementById("bookmarks");
+      var addBookmarkButton = document.getElementById("add-bookmark");
+      var chaptersSelect = document.getElementById("chapters");
+      var tocElement = document.getElementById("toc");
+      var toggleTocButton = document.getElementById("toggle-toc");
+
+      rendition.on("relocated", function (location) {
+        var percentage = book.locations.percentageFromCfi(location.start.cfi);
+        var percentage2 = Math.floor(percentage * 100);
+        currentLocation.textContent = `进度: ${percentage2}%`;
+      });
+
+      function addBookmark() {
+        var cfi = rendition.currentLocation().start.cfi;
+        var percentage = book.locations.percentageFromCfi(cfi);
+        var percentage2 = Math.floor(percentage * 100);
+        var option = document.createElement("option");
+        option.text = `书签 ${percentage2}%`;
+        option.value = cfi;
+        bookmarksSelect.add(option);
+
+        // 保存书签到 localStorage
+        var bookmarks = JSON.parse(localStorage.getItem("bookmarks") || "{}");
+        if (!bookmarks[encodedFilename]) {
+          bookmarks[encodedFilename] = [];
+        }
+        bookmarks[encodedFilename].push({ cfi: cfi, text: option.text });
+        localStorage.setItem("bookmarks", JSON.stringify(bookmarks));
+      }
+
+      addBookmarkButton.addEventListener("click", addBookmark);
+
+      bookmarksSelect.addEventListener("change", function () {
+        var cfi = this.value;
+        if (cfi) {
+          rendition.display(cfi);
+        }
+      });
+
+      chaptersSelect.addEventListener("change", function () {
+        var href = this.value;
+        rendition.display(href);
+      });
+
+      toggleTocButton.addEventListener("click", function () {
+        tocElement.classList.toggle("open");
+      });
+
+      // 加载目录和章节
+      book.loaded.navigation.then(function (toc) {
+        var tocHtml = "<ul>";
+        toc.forEach(function (chapter) {
+          tocHtml += `<li data-href="${chapter.href}">${chapter.label}</li>`;
+          var option = document.createElement("option");
+          option.text = chapter.label;
+          option.value = chapter.href;
+          chaptersSelect.add(option);
+        });
+        tocHtml += "</ul>";
+        tocElement.innerHTML = tocHtml;
+
+        tocElement.querySelectorAll("li").forEach(function (li) {
+          li.addEventListener("click", function () {
+            var href = this.getAttribute("data-href");
+            rendition.display(href);
+            tocElement.classList.remove("open");
+          });
+        });
+      });
+
+      // 加载保存的书签
+      book.ready
+        .then(() => {
+          var bookmarks = JSON.parse(localStorage.getItem("bookmarks") || "{}");
+          if (bookmarks[encodedFilename]) {
+            bookmarks[encodedFilename].forEach((bookmark) => {
+              var option = document.createElement("option");
+              option.text = bookmark.text;
+              option.value = bookmark.cfi;
+              bookmarksSelect.add(option);
+            });
+          }
+          return book.locations.generate(1024);
+        })
+        .then(() => {
+          var currentCfi = rendition.currentLocation().start.cfi;
+          var percentage = book.locations.percentageFromCfi(currentCfi);
+          var percentage2 = Math.floor(percentage * 100);
+          currentLocation.textContent = `进度: ${percentage2}%`;
+        });
+      // 获取UI元素
+      var viewerElement = document.getElementById("viewer");
+      var tocElement = document.getElementById("toc");
+      var dictionaryElement = document.getElementById("dictionary");
+      var topBarElement = document.getElementById("top-bar");
+
+      // 双击时隐藏或显示UI元素
+      viewerElement.addEventListener("dblclick", function () {
+        // 切换UI元素的显示和隐藏状态
+        if (topBarElement.style.display === "none") {
+          topBarElement.style.display = "flex";
+          tocElement.style.left = tocElement.classList.contains("open")
+            ? "0"
+            : "-250px";
+          dictionaryElement.style.right = dictionaryElement.classList.contains(
+            "open"
+          )
+            ? "0"
+            : "-350px";
+        } else {
+          topBarElement.style.display = "none";
+          tocElement.style.left = "-250px"; // 确保目录完全隐藏
+          dictionaryElement.style.right = "-350px"; // 确保字典完全隐藏
+        }
+      });
+    </script>
+  </body>
+</html>
