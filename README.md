@@ -15,8 +15,13 @@
 - epub.js
 - PIL (Python Imaging Library)
 - ebooklib
+- 
+## 便携版
 
-## 安装与运行
+你可以从 [Releases 页面](https://github.com/ikemenrourou/epub-light-novel-library/releases) 下载最新的发行版。
+双击start.bat启动
+
+## 源代码安装
 
 1. 安装依赖：
 
