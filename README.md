@@ -6,7 +6,7 @@
 
 ## 截图
 
-![首页截图](path_to_your_screenshot)
+![首页截图](截图/test1.jpg)
 
 ## 环境要求
 
