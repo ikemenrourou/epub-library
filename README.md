@@ -1,5 +1,5 @@
-# epub-library
-- 全是bug，不建议使用
+# epub-light-novel-library
+- **全是bug，不建议使用**
 - 一个使用AI写的基于Flask、Python 和 epub.js 构建的本地 EPUB 轻小说阅读 Web 应用
 - 截止2天前，楼主没有看过1秒钟编程视频，代码编辑器用的还是记事本，纯靠gpt老师
 - （AI主要用的是 4O 和 copilot，claude3.5，极少数 o1）
