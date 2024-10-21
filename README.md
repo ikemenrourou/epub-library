@@ -20,6 +20,7 @@
 ## 便携版
 
 你可以从 [Releases 页面](https://github.com/ikemenrourou/epub-light-novel-library/releases) 下载最新的发行版。
+**在根目录创建books文件夹，将 EPUB 文件放入项目的 books/ 文件夹中**
 双击start.bat启动
 
 ## 源代码安装
@@ -28,6 +29,8 @@
 
    ```bash
    pip install -r requirements.txt
+   
+**在根目录创建books文件夹，将 EPUB 文件放入项目的 books/ 文件夹中**
 
 2. 运行应用程序：
 
