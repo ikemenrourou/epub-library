@@ -15,7 +15,7 @@
 - epub.js
 - PIL (Python Imaging Library)
 - ebooklib
-- 
+
 ## 便携版
 
 你可以从 [Releases 页面](https://github.com/ikemenrourou/epub-light-novel-library/releases) 下载最新的发行版。
@@ -32,6 +32,8 @@
 
    ```bash
    python app.py
+   
+3. 打开浏览器，访问 http://localhost:5001
 
 ## 使用说明
 
@@ -41,4 +43,4 @@
 - 字典功能：阅读时可以添加自定义条目进行文字替换。（得更换章节才能顺利显示）
 - 双击四周隐藏/显示UI （隐藏后可能无法使用字典功能）
 
-欢迎提交 issue 不过楼主0编程经验大概率没有能力修TAT甚至bug越修越多！大概这个项目不会更新，见谅捏。
+欢迎提交 issue 不过楼主0编程经验大概率没有能力修TAT甚至bug越修越多！大概这个项目不会更新，见谅捏）。
